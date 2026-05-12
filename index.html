@@ -1,0 +1,106 @@
+export default function WifiSecurityAnalyzerApp() { const networks = [ { name: "Home_Network_5G", security: "WPA3", strength: 92, risk: "Very Secure", }, { name: "Office_WiFi", security: "WPA2", strength: 74, risk: "Moderate", }, { name: "Default_Router_123", security: "WEP", strength: 22, risk: "Weak", }, ];
+
+const getColor = (strength) => { if (strength > 80) return "bg-green-500"; if (strength > 50) return "bg-yellow-500"; return "bg-red-500"; };
+
+return ( <div className="min-h-screen bg-black text-white p-6 font-sans"> <div className="max-w-5xl mx-auto"> <div className="flex items-center justify-between mb-8"> <div> <h1 className="text-4xl font-bold tracking-tight"> WiFi Security Analyzer </h1> <p className="text-gray-400 mt-2"> Analyze and secure your own WiFi network. </p> </div>
+
+<button className="bg-blue-600 hover:bg-blue-700 transition px-5 py-3 rounded-2xl shadow-xl">
+        Scan Networks
+      </button>
+    </div>
+
+    <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800">
+        <h2 className="text-gray-400 text-sm">Networks Found</h2>
+        <p className="text-5xl font-bold mt-3">12</p>
+      </div>
+
+      <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800">
+        <h2 className="text-gray-400 text-sm">Secure Networks</h2>
+        <p className="text-5xl font-bold mt-3 text-green-400">8</p>
+      </div>
+
+      <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800">
+        <h2 className="text-gray-400 text-sm">Weak Networks</h2>
+        <p className="text-5xl font-bold mt-3 text-red-400">4</p>
+      </div>
+    </div>
+
+    <div className="bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden shadow-2xl mb-8">
+      <div className="p-5 border-b border-zinc-800 flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">Nearby Networks</h2>
+        <input
+          placeholder="Search network..."
+          className="bg-zinc-800 px-4 py-2 rounded-xl outline-none"
+        />
+      </div>
+
+      <div className="divide-y divide-zinc-800">
+        {networks.map((network, index) => (
+          <div
+            key={index}
+            className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-zinc-800/40 transition"
+          >
+            <div>
+              <h3 className="text-xl font-semibold">{network.name}</h3>
+              <p className="text-gray-400 mt-1">
+                Security: {network.security}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-4 w-full md:w-1/3">
+              <div className="w-full bg-zinc-800 rounded-full h-4 overflow-hidden">
+                <div
+                  className={`${getColor(network.strength)} h-full rounded-full`}
+                  style={{ width: `${network.strength}%` }}
+                />
+              </div>
+
+              <span className="font-semibold text-sm whitespace-nowrap">
+                {network.risk}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800 shadow-2xl">
+        <h2 className="text-2xl font-semibold mb-4">
+          Password Strength Checker
+        </h2>
+
+        <input
+          type="password"
+          placeholder="Enter your WiFi password"
+          className="w-full bg-zinc-800 rounded-2xl px-4 py-3 outline-none mb-4"
+        />
+
+        <button className="w-full bg-green-600 hover:bg-green-700 transition rounded-2xl py-3 font-semibold shadow-xl">
+          Analyze Password
+        </button>
+      </div>
+
+      <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800 shadow-2xl">
+        <h2 className="text-2xl font-semibold mb-4">
+          Router Protection Tips
+        </h2>
+
+        <ul className="space-y-3 text-gray-300">
+          <li>• Use WPA2 or WPA3 encryption</li>
+          <li>• Avoid default router passwords</li>
+          <li>• Change admin credentials regularly</li>
+          <li>• Disable WPS for stronger protection</li>
+          <li>• Use long passwords with symbols</li>
+        </ul>
+      </div>
+    </div>
+
+    <div className="mt-10 text-center text-gray-500 text-sm">
+      Built for ethical WiFi security testing and personal network protection.
+    </div>
+  </div>
+</div>
+
+); }
