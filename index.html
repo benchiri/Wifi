@@ -1,106 +1,243 @@
-export default function WifiSecurityAnalyzerApp() { const networks = [ { name: "Home_Network_5G", security: "WPA3", strength: 92, risk: "Very Secure", }, { name: "Office_WiFi", security: "WPA2", strength: 74, risk: "Moderate", }, { name: "Default_Router_123", security: "WEP", strength: 22, risk: "Weak", }, ];
+import { useState } from 'react';
 
-const getColor = (strength) => { if (strength > 80) return "bg-green-500"; if (strength > 50) return "bg-yellow-500"; return "bg-red-500"; };
+export default function WifiSecurityAnalyzerApp() {
+  const [networks, setNetworks] = useState([
+    { name: "Home_Network_5G", security: "WPA3", strength: 92, risk: "Very Secure" },
+    { name: "Office_WiFi", security: "WPA2", strength: 74, risk: "Moderate" },
+    { name: "Default_Router_123", security: "WEP", strength: 22, risk: "Weak" },
+    { name: "CoffeeShop_Guest", security: "Open", strength: 45, risk: "Weak" },
+    { name: "Neighbor_Netgear", security: "WPA2", strength: 68, risk: "Moderate" },
+    { name: "IoT_Devices", security: "WPA2", strength: 55, risk: "Moderate" },
+    { name: "Admin_Network", security: "WPA3", strength: 88, risk: "Very Secure" },
+  ]);
 
-return ( <div className="min-h-screen bg-black text-white p-6 font-sans"> <div className="max-w-5xl mx-auto"> <div className="flex items-center justify-between mb-8"> <div> <h1 className="text-4xl font-bold tracking-tight"> WiFi Security Analyzer </h1> <p className="text-gray-400 mt-2"> Analyze and secure your own WiFi network. </p> </div>
+  const [searchTerm, setSearchTerm] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
 
-<button className="bg-blue-600 hover:bg-blue-700 transition px-5 py-3 rounded-2xl shadow-xl">
-        Scan Networks
-      </button>
-    </div>
+  const getColor = (strength) => {
+    if (strength > 80) return "bg-green-500";
+    if (strength > 50) return "bg-yellow-500";
+    return "bg-red-500";
+  };
 
-    <div className="grid md:grid-cols-3 gap-6 mb-8">
-      <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800">
-        <h2 className="text-gray-400 text-sm">Networks Found</h2>
-        <p className="text-5xl font-bold mt-3">12</p>
-      </div>
+  const getRiskColor = (risk) => {
+    if (risk === "Very Secure") return "text-green-400";
+    if (risk === "Moderate") return "text-yellow-400";
+    return "text-red-400";
+  };
 
-      <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800">
-        <h2 className="text-gray-400 text-sm">Secure Networks</h2>
-        <p className="text-5xl font-bold mt-3 text-green-400">8</p>
-      </div>
+  const filteredNetworks = networks.filter(network =>
+    network.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    network.security.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-      <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800">
-        <h2 className="text-gray-400 text-sm">Weak Networks</h2>
-        <p className="text-5xl font-bold mt-3 text-red-400">4</p>
-      </div>
-    </div>
+  const secureCount = networks.filter(n => n.risk === "Very Secure").length;
+  const weakCount = networks.filter(n => n.risk === "Weak").length;
+  const totalNetworks = networks.length;
 
-    <div className="bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden shadow-2xl mb-8">
-      <div className="p-5 border-b border-zinc-800 flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Nearby Networks</h2>
-        <input
-          placeholder="Search network..."
-          className="bg-zinc-800 px-4 py-2 rounded-xl outline-none"
-        />
-      </div>
+  const scanNetworks = () => {
+    setIsScanning(true);
+    setTimeout(() => {
+      const newNetworks = [
+        { name: "Library_WiFi", security: "WPA2-Enterprise", strength: 85, risk: "Very Secure" },
+        { name: "Park_Hotspot", security: "Open", strength: 30, risk: "Weak" },
+        { name: "Store_Free_WiFi", security: "WEP", strength: 18, risk: "Weak" },
+      ];
+      setNetworks(prev => [...prev, ...newNetworks]);
+      setIsScanning(false);
+    }, 2000);
+  };
 
-      <div className="divide-y divide-zinc-800">
-        {networks.map((network, index) => (
-          <div
-            key={index}
-            className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-zinc-800/40 transition"
-          >
-            <div>
-              <h3 className="text-xl font-semibold">{network.name}</h3>
-              <p className="text-gray-400 mt-1">
-                Security: {network.security}
-              </p>
-            </div>
+  const analyzePassword = () => {
+    let score = 0;
+    if (password.length >= 12) score++;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    
+    setPasswordStrength(score);
+  };
 
-            <div className="flex items-center gap-4 w-full md:w-1/3">
-              <div className="w-full bg-zinc-800 rounded-full h-4 overflow-hidden">
-                <div
-                  className={`${getColor(network.strength)} h-full rounded-full`}
-                  style={{ width: `${network.strength}%` }}
-                />
-              </div>
+  const getPasswordFeedback = () => {
+    if (passwordStrength === null) return null;
+    if (passwordStrength <= 2) return { text: "Very Weak - Easily cracked", color: "text-red-500" };
+    if (passwordStrength <= 3) return { text: "Moderate - Could be stronger", color: "text-yellow-500" };
+    if (passwordStrength <= 4) return { text: "Strong - Good protection", color: "text-green-400" };
+    return { text: "Very Strong - Excellent protection", color: "text-green-400" };
+  };
 
-              <span className="font-semibold text-sm whitespace-nowrap">
-                {network.risk}
-              </span>
-            </div>
+  return (
+    <div className="min-h-screen bg-black text-white p-4 md:p-8 flex items-center justify-center">
+      <div className="max-w-6xl w-full">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+          <div>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              WiFi Security Analyzer
+            </h1>
+            <p className="text-gray-400 mt-2 text-lg">
+              Analyze and secure your own WiFi network.
+            </p>
           </div>
-        ))}
+          <button
+            className="bg-blue-600 hover:bg-blue-700 transition px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={scanNetworks}
+            disabled={isScanning}
+          >
+            {isScanning ? (
+              <>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Scanning...
+              </>
+            ) : (
+              'Scan Networks'
+            )}
+          </button>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800 hover:border-zinc-700 transition">
+            <h2 className="text-gray-400 text-sm">Networks Found</h2>
+            <p className="text-5xl font-bold mt-3">{totalNetworks}</p>
+          </div>
+          <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800 hover:border-zinc-700 transition">
+            <h2 className="text-gray-400 text-sm">Secure Networks</h2>
+            <p className="text-5xl font-bold mt-3 text-green-400">{secureCount}</p>
+          </div>
+          <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800 hover:border-zinc-700 transition">
+            <h2 className="text-gray-400 text-sm">Weak Networks</h2>
+            <p className="text-5xl font-bold mt-3 text-red-400">{weakCount}</p>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden shadow-2xl mb-8">
+          <div className="p-5 border-b border-zinc-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <h2 className="text-2xl font-semibold">Nearby Networks</h2>
+            <input
+              placeholder="Search network or security type..."
+              className="bg-zinc-800 px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search networks"
+            />
+          </div>
+          <div className="divide-y divide-zinc-800">
+            {filteredNetworks.length > 0 ? (
+              filteredNetworks.map((network, index) => (
+                <div
+                  key={index}
+                  className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-zinc-800/40 transition"
+                >
+                  <div>
+                    <h3 className="text-xl font-semibold">{network.name}</h3>
+                    <p className="text-gray-400 mt-1">
+                      Security: <span className={getRiskColor(network.risk)}>{network.security}</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 w-full md:w-1/3">
+                    <div className="w-full bg-zinc-800 rounded-full h-4 overflow-hidden" 
+                      role="progressbar" 
+                      aria-valuenow={network.strength} 
+                      aria-valuemin="0" 
+                      aria-valuemax="100"
+                      aria-label={`Signal strength: ${network.strength}%`}
+                    >
+                      <div
+                        className={`${getColor(network.strength)} h-full rounded-full transition-all duration-500`}
+                        style={{ width: `${network.strength}%` }}
+                      />
+                    </div>
+                    <span className={`font-semibold text-sm whitespace-nowrap ${getRiskColor(network.risk)}`}>
+                      {network.risk}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-gray-500">
+                No networks found matching "{searchTerm}"
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800 shadow-2xl">
+            <h2 className="text-2xl font-semibold mb-4">Password Strength Checker</h2>
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="Enter your WiFi password"
+                className="w-full bg-zinc-800 rounded-2xl px-4 py-3 outline-none mb-4 focus:ring-2 focus:ring-blue-500 transition"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && analyzePassword()}
+                aria-label="WiFi password input"
+              />
+              {passwordStrength !== null && (
+                <div className="mb-4">
+                  <div className="flex gap-2">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                          i < passwordStrength ? 'bg-green-500' : 'bg-zinc-700'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className={`text-sm mt-2 ${getPasswordFeedback()?.color}`}>
+                    {getPasswordFeedback()?.text}
+                  </p>
+                </div>
+              )}
+            </div>
+            <button
+              className="w-full bg-green-600 hover:bg-green-700 transition rounded-2xl py-3 font-semibold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={analyzePassword}
+              disabled={!password}
+            >
+              Analyze Password
+            </button>
+          </div>
+
+          <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800 shadow-2xl">
+            <h2 className="text-2xl font-semibold mb-4">Router Protection Tips</h2>
+            <ul className="space-y-3 text-gray-300">
+              <li className="flex items-start gap-2">
+                <span className="text-green-400 mt-1">•</span>
+                Use WPA2 or WPA3 encryption
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-400 mt-1">•</span>
+                Avoid default router passwords
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-400 mt-1">•</span>
+                Change admin credentials regularly
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-400 mt-1">•</span>
+                Disable WPS for stronger protection
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-400 mt-1">•</span>
+                Use long passwords with symbols
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-10 text-center text-gray-500 text-sm">
+          Built for ethical WiFi security testing and personal network protection.
+        </div>
       </div>
     </div>
-
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800 shadow-2xl">
-        <h2 className="text-2xl font-semibold mb-4">
-          Password Strength Checker
-        </h2>
-
-        <input
-          type="password"
-          placeholder="Enter your WiFi password"
-          className="w-full bg-zinc-800 rounded-2xl px-4 py-3 outline-none mb-4"
-        />
-
-        <button className="w-full bg-green-600 hover:bg-green-700 transition rounded-2xl py-3 font-semibold shadow-xl">
-          Analyze Password
-        </button>
-      </div>
-
-      <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800 shadow-2xl">
-        <h2 className="text-2xl font-semibold mb-4">
-          Router Protection Tips
-        </h2>
-
-        <ul className="space-y-3 text-gray-300">
-          <li>• Use WPA2 or WPA3 encryption</li>
-          <li>• Avoid default router passwords</li>
-          <li>• Change admin credentials regularly</li>
-          <li>• Disable WPS for stronger protection</li>
-          <li>• Use long passwords with symbols</li>
-        </ul>
-      </div>
-    </div>
-
-    <div className="mt-10 text-center text-gray-500 text-sm">
-      Built for ethical WiFi security testing and personal network protection.
-    </div>
-  </div>
-</div>
-
-); }
+  );
+}
