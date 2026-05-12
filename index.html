@@ -1,20 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function WifiSecurityAnalyzerApp() {
   const [networks, setNetworks] = useState([
     { name: "Home_Network_5G", security: "WPA3", strength: 92, risk: "Very Secure" },
     { name: "Office_WiFi", security: "WPA2", strength: 74, risk: "Moderate" },
     { name: "Default_Router_123", security: "WEP", strength: 22, risk: "Weak" },
-    { name: "CoffeeShop_Guest", security: "Open", strength: 45, risk: "Weak" },
-    { name: "Neighbor_Netgear", security: "WPA2", strength: 68, risk: "Moderate" },
-    { name: "IoT_Devices", security: "WPA2", strength: 55, risk: "Moderate" },
-    { name: "Admin_Network", security: "WPA3", strength: 88, risk: "Very Secure" },
   ]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [password, setPassword] = useState('');
   const [passwordStrength, setPasswordStrength] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanPhase, setScanPhase] = useState('');
+  const [discoveredNetworks, setDiscoveredNetworks] = useState([]);
+  const [showDiscovered, setShowDiscovered] = useState(false);
+
+  // Simulate realistic network scanning
+  useEffect(() => {
+    let scanInterval;
+    if (isScanning) {
+      setScanProgress(0);
+      setDiscoveredNetworks([]);
+      setShowDiscovered(true);
+      
+      const potentialNetworks = [
+        { name: "CoffeeShop_Guest", security: "Open", strength: 45, risk: "Weak" },
+        { name: "Neighbor_Netgear", security: "WPA2", strength: 68, risk: "Moderate" },
+        { name: "Library_WiFi", security: "WPA2-Enterprise", strength: 85, risk: "Very Secure" },
+        { name: "Park_Hotspot", security: "Open", strength: 30, risk: "Weak" },
+        { name: "Store_Free_WiFi", security: "WEP", strength: 18, risk: "Weak" },
+        { name: "Office_Guest", security: "WPA2", strength: 72, risk: "Moderate" },
+        { name: "Apartment_4B", security: "WPA3", strength: 88, risk: "Very Secure" },
+        { name: "IoT_Network", security: "WPA2", strength: 55, risk: "Moderate" },
+        { name: "Gaming_Router", security: "WPA2", strength: 78, risk: "Moderate" },
+      ];
+
+      scanInterval = setInterval(() => {
+        setScanProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(scanInterval);
+            // Finalize scan
+            setTimeout(() => {
+              const shuffled = [...potentialNetworks].sort(() => Math.random() - 0.5);
+              const selected = shuffled.slice(0, Math.floor(Math.random() * 3) + 3);
+              setNetworks(prev => [...prev, ...selected]);
+              setIsScanning(false);
+              setTimeout(() => setShowDiscovered(false), 2000);
+            }, 500);
+            return 100;
+          }
+
+          // Update scan phase based on progress
+          if (prev < 30) setScanPhase('Scanning 2.4GHz band...');
+          else if (prev < 60) setScanPhase('Scanning 5GHz band...');
+          else if (prev < 80) setScanPhase('Analyzing security protocols...');
+          else setScanPhase('Finalizing results...');
+
+          // Randomly discover networks during scan
+          if (prev % 15 === 0 && discoveredNetworks.length < 5) {
+            const newNetwork = potentialNetworks[Math.floor(Math.random() * potentialNetworks.length)];
+            if (!discoveredNetworks.find(n => n.name === newNetwork.name)) {
+              setDiscoveredNetworks(prev => [...prev, newNetwork]);
+            }
+          }
+
+          return prev + Math.random() * 8 + 2; // Random progress increments
+        });
+      }, 300);
+    }
+
+    return () => clearInterval(scanInterval);
+  }, [isScanning]);
 
   const getColor = (strength) => {
     if (strength > 80) return "bg-green-500";
@@ -38,16 +95,9 @@ export default function WifiSecurityAnalyzerApp() {
   const totalNetworks = networks.length;
 
   const scanNetworks = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      const newNetworks = [
-        { name: "Library_WiFi", security: "WPA2-Enterprise", strength: 85, risk: "Very Secure" },
-        { name: "Park_Hotspot", security: "Open", strength: 30, risk: "Weak" },
-        { name: "Store_Free_WiFi", security: "WEP", strength: 18, risk: "Weak" },
-      ];
-      setNetworks(prev => [...prev, ...newNetworks]);
-      setIsScanning(false);
-    }, 2000);
+    if (!isScanning) {
+      setIsScanning(true);
+    }
   };
 
   const analyzePassword = () => {
@@ -100,6 +150,57 @@ export default function WifiSecurityAnalyzerApp() {
             )}
           </button>
         </div>
+
+        {/* Scanning Status Overlay */}
+        {showDiscovered && (
+          <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-6 mb-8 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative">
+                <svg className="animate-spin h-6 w-6 text-blue-400" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-lg">{scanPhase}</p>
+                <p className="text-gray-400 text-sm">
+                  {isScanning ? `${Math.floor(scanProgress)}% complete` : 'Scan complete!'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden mb-4">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full transition-all duration-300"
+                style={{ width: `${scanProgress}%` }}
+              />
+            </div>
+
+            {/* Discovered Networks */}
+            {discoveredNetworks.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-400 mb-2">Discovered Networks:</p>
+                {discoveredNetworks.map((network, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center gap-3 p-2 bg-zinc-800 rounded-lg animate-fadeIn"
+                  >
+                    <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M17.778 8.222c-4.296-4.296-11.26-4.296-15.556 0A1 1 0 01.808 6.808c5.076-5.077 13.308-5.077 18.384 0a1 1 0 01-1.414 1.414zM14.95 11.05a7 7 0 00-9.9 0 1 1 0 01-1.414-1.414 9 9 0 0112.728 0 1 1 0 01-1.414 1.414zM12.12 13.88a3 3 0 00-4.242 0 1 1 0 01-1.415-1.415 5 5 0 017.072 0 1 1 0 01-1.415 1.415zM9 16a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <span className="font-semibold">{network.name}</span>
+                      <span className={`ml-2 text-sm ${getRiskColor(network.risk)}`}>
+                        {network.security}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <div className="bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-800 hover:border-zinc-700 transition">
